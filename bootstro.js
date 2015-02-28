@@ -18,14 +18,15 @@ $(document).ready(function(){
         var count;
         var popovers = []; //contains array of the popovers data
         var activeIndex = null; //index of active item
+        var bootstrapVersion = 3;
 
         var defaults = {
             nextButtonText : 'Next &raquo;', //will be wrapped with button as below
-            //nextButton : '<button class="btn btn-primary btn-mini bootstro-next-btn">Next &raquo;</button>',
+            //nextButton : '<button class="btn btn-primary btn-xs bootstro-next-btn">Next &raquo;</button>',
             prevButtonText : '&laquo; Prev',
-            //prevButton : '<button class="btn btn-primary btn-mini bootstro-prev-btn">&laquo; Prev</button>',
+            //prevButton : '<button class="btn btn-primary btn-xs bootstro-prev-btn">&laquo; Prev</button>',
             finishButtonText : '<i class="icon-ok"></i> Ok I got it, get back to the site',
-            //finishButton : '<button class="btn btn-mini btn-success bootstro-finish-btn"><i class="icon-ok"></i> Ok I got it, get back to the site</button>',
+            //finishButton : '<button class="btn btn-xs btn-success bootstro-finish-btn"><i class="icon-ok"></i> Ok I got it, get back to the site</button>',
             stopOnBackdropClick : true,
             stopOnEsc : true,
             
@@ -60,8 +61,11 @@ $(document).ready(function(){
         function add_nav_btn(content, i)
         {
             var $el = get_element(i);
-            var nextButton, prevButton, finishButton;
-            
+            var nextButton, prevButton, finishButton, defaultBtnClass;
+            if (bootstrapVersion == 2)
+                defaultBtnClass = "btn btn-primary btn-mini";
+            else 
+                defaultBtnClass = "btn btn-primary btn-xs"; //default bootstrap version 3
             content = content + "<div class='bootstro-nav-wrapper'>";
             if ($el.attr('data-bootstro-nextButton'))
             {
@@ -69,14 +73,14 @@ $(document).ready(function(){
             }
             else if ( $el.attr('data-bootstro-nextButtonText') )
             {
-                nextButton = '<button class="btn btn-primary btn-mini bootstro-next-btn">' + $el.attr('data-bootstro-nextButtonText') +  '</button>';
+                nextButton = '<button class="' + defaultBtnClass + ' bootstro-next-btn">' + $el.attr('data-bootstro-nextButtonText') +  '</button>';
             }
             else 
             {
                 if (typeof settings.nextButton != 'undefined' /*&& settings.nextButton != ''*/)
                     nextButton = settings.nextButton;
                 else
-                    nextButton = '<button class="btn btn-primary btn-mini bootstro-next-btn">' + settings.nextButtonText + '</button>';
+                    nextButton = '<button class="' + defaultBtnClass + ' bootstro-next-btn">' + settings.nextButtonText + '</button>';
             }
             
             if ($el.attr('data-bootstro-prevButton'))
@@ -85,14 +89,14 @@ $(document).ready(function(){
             }
             else if ( $el.attr('data-bootstro-prevButtonText') )
             {
-                prevButton = '<button class="btn btn-primary btn-mini bootstro-prev-btn">' + $el.attr('data-bootstro-prevButtonText') +  '</button>';
+                prevButton = '<button class="' + defaultBtnClass + ' bootstro-prev-btn">' + $el.attr('data-bootstro-prevButtonText') +  '</button>';
             }
             else 
             {
                 if (typeof settings.prevButton != 'undefined' /*&& settings.prevButton != ''*/)
                     prevButton = settings.prevButton;
                 else
-                    prevButton = '<button class="btn btn-primary btn-mini bootstro-prev-btn">' + settings.prevButtonText + '</button>';
+                    prevButton = '<button class="' + defaultBtnClass + ' bootstro-prev-btn">' + settings.prevButtonText + '</button>';
             }
             
             if ($el.attr('data-bootstro-finishButton'))
@@ -101,14 +105,14 @@ $(document).ready(function(){
             }
             else if ( $el.attr('data-bootstro-finishButtonText') )
             {
-                finishButton = '<button class="btn btn-primary btn-mini bootstro-finish-btn">' + $el.attr('data-bootstro-finishButtonText') +  '</button>';
+                finishButton = '<button class="' + defaultBtnClass +' bootstro-finish-btn">' + $el.attr('data-bootstro-finishButtonText') +  '</button>';
             }
             else 
             {
                 if (typeof settings.finishButton != 'undefined' /*&& settings.finishButton != ''*/)
                     finishButton = settings.finishButton;
                 else
-                    finishButton = '<button class="btn btn-primary btn-mini bootstro-finish-btn">' + settings.finishButtonText + '</button>';
+                    finishButton = '<button class="' + defaultBtnClass +' bootstro-finish-btn">' + settings.finishButtonText + '</button>';
             }
 
         
@@ -127,6 +131,22 @@ $(document).ready(function(){
             return content;
         }
         
+        //prep objects from json and return selector
+        process_items = function(popover) 
+        {
+            var selectorArr = [];
+            $.each(popover, function(t,e){
+                //only deal with the visible element
+                //build the selector
+                $.each(e, function(j, attr){
+                    $(e.selector).attr('data-bootstro-' + j, attr);
+                });
+                if ($(e.selector).is(":visible"))
+                    selectorArr.push(e.selector);
+            });
+            return selectorArr.join(",");
+        }
+
         //get the element to intro at stack i 
         get_element = function(i)
         {
@@ -320,28 +340,28 @@ $(document).ready(function(){
                             //result is an array of {selector:'','title':'','width', ...}
                             var popover = data.result;
                             //console.log(popover);
-                            var selectorArr = [];
-                            $.each(popover, function(t,e){
-                                //only deal with the visible element
-                                //build the selector
-                                $.each(e, function(j, attr){
-                                    $(e.selector).attr('data-bootstro-' + j, attr);
-                                });
-                                if ($(e.selector).is(":visible"))
-                                    selectorArr.push(e.selector);
-                            });
-                            selector = selectorArr.join(",");
+                            selector = process_items(popover);
                             bootstro._start(selector);
                         }
                     }
                 });
             }
+            //if options specifies an items object use it to load the intro configuration
+            //settings.items is an array of {selector:'','title':'','width', ...}
+            else if (typeof settings.items != 'undefined')
+            {
+                bootstro._start(process_items(settings.items))
+            }
             else 
             {
                 bootstro._start(selector);
             }
-            
         };
+        
+        bootstro.set_bootstrap_version = function(ver)
+        {
+            bootstrapVersion = ver;
+        }
           
         //bind the nav buttons click event
         bootstro.bind = function()
@@ -362,6 +382,7 @@ $(document).ready(function(){
       
             //end of show
             $("html").on('click.bootstro', ".bootstro-finish-btn", function(e){
+                e.preventDefault();
                 bootstro.stop();
             });        
             
